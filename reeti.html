@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1C1330">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Reeti">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='48' fill='%231C1330'/%3E%3Ctext x='50' y='66' font-size='55' text-anchor='middle'%3E%F0%9F%AA%94%3C/text%3E%3C/svg%3E">
+<title>Reeti — Cultural Heritage Companion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&family=Tiro+Devanagari+Hindi&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1C1330;
+  --ink-soft:#2E2148;
+  --paper:#F3E9D2;
+  --paper-dim:#EADFC2;
+  --marigold:#E8A63D;
+  --marigold-deep:#C9852A;
+  --madder:#B23A48;
+  --peacock:#1F6F6B;
+  --violet:#6C4AB6;
+  --sand:#D8C9A3;
+  --line: rgba(28,19,48,0.14);
+  --shadow-ink: rgba(28,19,48,0.28);
+  font-size:16px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:'Manrope',sans-serif;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+h1,h2,h3,.display{
+  font-family:'Fraunces',serif;
+  font-weight:600;
+  letter-spacing:-0.01em;
+  color:var(--ink);
+  margin:0;
+}
+.deva{ font-family:'Tiro Devanagari Hindi',serif; }
+button{ font-family:inherit; cursor:pointer; }
+p{margin:0;}
+::selection{ background:var(--marigold); color:var(--ink); }
+
+/* ---------- App shell ---------- */
+#app{ min-height:100vh; display:flex; }
+#content{
+  flex:1;
+  min-width:0;
+  padding:20px 16px 96px;
+  max-width:960px;
+  margin:0 auto;
+  width:100%;
+}
+.topbar{
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:18px; gap:10px;
+}
+.greet{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+.greet .deva{ font-size:1.05rem; color:var(--madder); }
+.greet .sub{ font-size:0.82rem; color:var(--ink-soft); opacity:0.75; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.chips{ display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.streak-chip, .level-chip{
+  display:flex; align-items:center; gap:5px; border:none;
+  background:var(--ink); color:var(--paper);
+  border-radius:100px;
+  padding:8px 12px; font-weight:700; font-size:0.85rem;
+}
+.streak-chip{ background:var(--madder); }
+.level-chip{ background:var(--peacock); }
+.logout-btn{
+  display:flex; align-items:center; justify-content:center;
+  width:34px; height:34px; border-radius:50%; border:1px solid var(--line);
+  background:var(--paper-dim); color:var(--ink); font-size:0.95rem; flex-shrink:0;
+}
+.logout-btn:active{ transform:scale(0.94); }
+
+/* ---------- Nav ---------- */
+nav#mainNav{
+  position:fixed; z-index:40;
+  bottom:0; left:0; right:0;
+  background:var(--ink);
+  display:flex; justify-content:flex-start;
+  overflow-x:auto; -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+  padding:8px 6px calc(8px + env(safe-area-inset-bottom,0px));
+  box-shadow:0 -6px 20px var(--shadow-ink);
+  gap:2px;
+}
+nav#mainNav::-webkit-scrollbar{ display:none; }
+nav#mainNav button{
+  background:none; border:none; color:rgba(243,233,210,0.55);
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  font-size:0.62rem; font-weight:700; padding:6px 8px; border-radius:10px;
+  flex:0 0 auto; min-width:56px;
+}
+nav#mainNav button .ic{ font-size:1.22rem; }
+nav#mainNav button.active{ color:var(--paper); background:rgba(232,166,61,0.18); }
+
+/* Floating scan button */
+.fab{
+  position:fixed; z-index:41; right:16px; bottom:76px;
+  width:56px; height:56px; border-radius:50%;
+  background:var(--marigold); border:3px solid var(--ink);
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.4rem; box-shadow:0 8px 20px var(--shadow-ink);
+}
+.fab:active{ transform:scale(0.94); }
+
+/* ---------- Views ---------- */
+.view{ display:none; animation:fadein .35s ease; }
+.view.active{ display:block; }
+@keyframes fadein{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+.section-title{ font-size:1.3rem; margin-bottom:10px; display:flex; align-items:center; gap:8px; justify-content:space-between;}
+.section-lead{ color:var(--ink-soft); font-size:0.92rem; margin-bottom:16px; max-width:60ch; }
+.sync-note{ font-size:0.7rem; color:var(--ink-soft); opacity:0.7; display:flex; align-items:center; gap:4px; }
+
+/* Card grid */
+.tile-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:22px; }
+.tile{
+  background:var(--paper-dim); border:1px solid var(--line);
+  border-radius:14px; padding:14px 8px; text-align:center;
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+}
+.tile .ic{ font-size:1.6rem; }
+.tile .lbl{ font-size:0.72rem; font-weight:700; line-height:1.15; }
+.tile:active{ transform:scale(0.97); }
+
+.card{
+  background:var(--paper-dim); border:1px solid var(--line);
+  border-radius:16px; padding:16px; margin-bottom:14px;
+}
+.card.hero{
+  background:linear-gradient(135deg, var(--ink) 0%, var(--ink-soft) 100%);
+  color:var(--paper); border:none;
+}
+.card.hero h2{ color:var(--paper); }
+.card.hero .sub{ color:rgba(243,233,210,0.75); font-size:0.85rem; margin-top:4px; }
+.btn{
+  border:none; border-radius:100px; padding:11px 18px;
+  font-weight:700; font-size:0.85rem; background:var(--marigold); color:var(--ink);
+  display:inline-flex; align-items:center; gap:6px;
+}
+.btn.secondary{ background:transparent; color:var(--paper); border:1.5px solid rgba(243,233,210,0.5); }
+.btn.ink{ background:var(--ink); color:var(--paper); }
+.btn.outline{ background:transparent; border:1.5px solid var(--ink); color:var(--ink); }
+.btn.small{ padding:7px 13px; font-size:0.78rem; }
+.btn:active{ transform:scale(0.97); }
+.btn:disabled{ opacity:0.45; }
+
+/* Role card */
+.role-card{ display:flex; align-items:center; gap:12px; }
+.role-card .ic{ font-size:2.1rem; }
+.role-card .txt{ flex:1; }
+.role-card h3{ font-size:1rem; margin-bottom:2px; }
+.role-card p{ font-size:0.82rem; color:var(--ink-soft); }
+
+/* ---------- Onboarding ---------- */
+#onboard{
+  position:fixed; inset:0; z-index:100; background:var(--ink);
+  color:var(--paper); display:flex; flex-direction:column;
+  padding:32px 22px; overflow-y:auto;
+}
+#onboard .ob-hero{ text-align:center; margin:10px 0 22px; }
+#onboard .ob-hero .deva{ color:var(--marigold); font-size:1.1rem; }
+#onboard .ob-hero h1{ color:var(--paper); font-size:2.1rem; margin-top:6px; }
+#onboard .ob-hero p{ color:rgba(243,233,210,0.7); margin-top:8px; font-size:0.9rem; }
+.ob-name{ max-width:420px; margin:0 auto 20px; width:100%; }
+.ob-name label{ display:block; font-size:0.78rem; font-weight:700; color:rgba(243,233,210,0.7); margin-bottom:6px; }
+.ob-name input{
+  width:100%; background:rgba(243,233,210,0.08); border:1.5px solid rgba(243,233,210,0.22);
+  border-radius:12px; padding:12px 14px; color:var(--paper); font-family:inherit; font-size:0.95rem;
+}
+.ob-name input:focus{ outline:none; border-color:var(--marigold); }
+.role-pick{
+  display:flex; flex-direction:column; gap:12px; max-width:420px; margin:0 auto; width:100%;
+}
+.role-opt{
+  background:rgba(243,233,210,0.06); border:1.5px solid rgba(243,233,210,0.18);
+  border-radius:16px; padding:16px; display:flex; align-items:center; gap:14px;
+  color:var(--paper); text-align:left;
+}
+.role-opt .ic{ font-size:1.8rem; width:42px; text-align:center; }
+.role-opt h3{ color:var(--paper); font-size:1rem; }
+.role-opt p{ color:rgba(243,233,210,0.65); font-size:0.8rem; margin-top:3px; }
+.role-opt:active{ background:rgba(232,166,61,0.16); border-color:var(--marigold); }
+
+/* ---------- Compass Map ---------- */
+.compass-wrap{
+  position:relative; width:100%; max-width:420px; aspect-ratio:1/1; margin:0 auto 18px;
+  border-radius:50%;
+  background:
+    radial-gradient(circle at center, transparent 0 30%, rgba(31,111,107,0.10) 31% 33%, transparent 34%),
+    radial-gradient(circle at center, transparent 0 48%, rgba(178,58,72,0.10) 49% 51%, transparent 52%),
+    var(--paper-dim);
+  border:1.5px dashed var(--line);
+}
+.compass-center{
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  width:74px; height:74px; border-radius:50%; background:var(--ink);
+  color:var(--paper); display:flex; flex-direction:column; align-items:center; justify-content:center;
+  font-size:0.62rem; font-weight:800; text-align:center; line-height:1.15; padding:4px;
+}
+.pin{
+  position:absolute; transform:translate(-50%,-50%);
+  width:64px; height:64px; border-radius:50%;
+  background:var(--marigold); border:2.5px solid var(--ink);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  font-size:1.3rem; box-shadow:0 4px 10px var(--shadow-ink);
+}
+.pin .plbl{ font-size:0.5rem; font-weight:800; margin-top:1px; }
+.pin.visited{ background:var(--peacock); color:var(--paper); }
+.pin:active{ transform:translate(-50%,-50%) scale(0.93); }
+
+.region-detail{ display:none; }
+.region-detail.show{ display:block; }
+.rd-head{ display:flex; align-items:center; gap:12px; margin-bottom:10px;}
+.rd-head .ic{ font-size:2.2rem; }
+.rd-tags{ display:flex; flex-wrap:wrap; gap:6px; margin:10px 0; }
+.tag{ background:var(--sand); border-radius:100px; padding:5px 11px; font-size:0.72rem; font-weight:700; }
+.fact{ background:rgba(31,111,107,0.1); border-left:3px solid var(--peacock); padding:10px 12px; border-radius:8px; font-size:0.85rem; margin-top:10px; }
+
+/* ---------- Games ---------- */
+.game-list{ display:flex; flex-direction:column; gap:12px; }
+.game-card{ display:flex; align-items:center; gap:12px; }
+.game-card .ic{ font-size:2rem; }
+.game-card .txt{ flex:1; }
+.game-card h3{ font-size:0.98rem; }
+.game-card p{ font-size:0.78rem; color:var(--ink-soft); margin-top:2px;}
+.lock{ opacity:0.55; }
+
+.memory-grid{
+  display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:14px 0;
+}
+.mcell{
+  aspect-ratio:1/1; border-radius:10px; background:var(--ink);
+  display:flex; align-items:center; justify-content:center; font-size:1.5rem;
+  color:var(--ink); border:1px solid var(--line);
+}
+.mcell.flip{ background:var(--paper-dim); color:var(--ink); }
+.mcell.matched{ background:var(--peacock); color:var(--paper); opacity:0.85; }
+.game-stats{ display:flex; gap:16px; font-size:0.82rem; font-weight:700; color:var(--ink-soft); margin-bottom:4px; }
+
+.quiz-progress{ font-size:0.78rem; font-weight:700; color:var(--ink-soft); margin-bottom:8px; }
+.quiz-q{ font-size:1rem; margin-bottom:12px; font-family:'Fraunces',serif; }
+.quiz-opts{ display:flex; flex-direction:column; gap:8px; }
+.quiz-opt{ text-align:left; background:var(--paper); border:1.5px solid var(--line); border-radius:12px; padding:12px 14px; font-size:0.88rem; font-weight:600; }
+.quiz-opt.correct{ border-color:var(--peacock); background:rgba(31,111,107,0.15); }
+.quiz-opt.wrong{ border-color:var(--madder); background:rgba(178,58,72,0.12); }
+.quiz-opt:disabled{ opacity:0.75; }
+
+/* ---------- Passport ---------- */
+.passport-book{
+  background:var(--ink); color:var(--paper); border-radius:18px; padding:22px 20px;
+  position:relative; overflow:hidden; margin-bottom:18px;
+  border:1.5px solid rgba(232,166,61,0.4);
+}
+.passport-book::before{
+  content:""; position:absolute; inset:8px; border:1px solid rgba(232,166,61,0.25); border-radius:12px; pointer-events:none;
+}
+.pb-top{ display:flex; align-items:center; gap:14px; }
+.pb-avatar{ width:58px; height:58px; border-radius:50%; background:var(--marigold); display:flex; align-items:center; justify-content:center; font-size:1.7rem; flex-shrink:0; }
+.pb-name{ font-family:'Fraunces',serif; font-size:1.2rem; }
+.pb-role{ font-size:0.78rem; color:rgba(243,233,210,0.65); margin-top:2px; }
+.xpbar-track{ background:rgba(243,233,210,0.15); border-radius:100px; height:8px; margin-top:14px; overflow:hidden; }
+.xpbar-fill{ background:var(--marigold); height:100%; border-radius:100px; transition:width .4s ease; }
+.xp-lbl{ font-size:0.72rem; color:rgba(243,233,210,0.6); margin-top:6px; }
+
+.passport-tabs{ display:flex; gap:8px; margin-bottom:14px; }
+.ptab{ flex:1; background:var(--paper-dim); border:1px solid var(--line); border-radius:100px; padding:9px; font-weight:700; font-size:0.82rem; text-align:center; color:var(--ink-soft); }
+.ptab.active{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+.ppanel{ display:none; }
+.ppanel.active{ display:block; }
+
+.stamp-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.stamp{
+  border:2px dashed var(--sand); border-radius:14px; padding:14px 6px; text-align:center;
+  display:flex; flex-direction:column; align-items:center; gap:5px;
+}
+.stamp .ic{ font-size:1.6rem; filter:grayscale(1); opacity:0.35; }
+.stamp.unlocked{ border-style:solid; border-color:var(--marigold); background:var(--paper-dim); }
+.stamp.unlocked .ic{ filter:none; opacity:1; }
+.stamp .slbl{ font-size:0.68rem; font-weight:700; line-height:1.15; }
+
+.dna-row{ margin-bottom:14px; }
+.dna-lbl{ display:flex; justify-content:space-between; font-size:0.82rem; font-weight:700; margin-bottom:5px; }
+.dna-track{ background:var(--paper-dim); border-radius:100px; height:10px; overflow:hidden; border:1px solid var(--line); }
+.dna-fill{ height:100%; border-radius:100px; transition:width .5s ease; }
+
+/* ---------- Chat / Ask Nani ---------- */
+.chat-wrap{ display:flex; flex-direction:column; height:calc(100vh - 250px); min-height:320px; }
+.chat-scroll{ flex:1; overflow-y:auto; padding:4px 2px 12px; display:flex; flex-direction:column; gap:10px; }
+.bubble{ max-width:80%; padding:11px 14px; border-radius:16px; font-size:0.88rem; line-height:1.4; }
+.bubble.nani{ background:var(--paper-dim); border:1px solid var(--line); align-self:flex-start; border-bottom-left-radius:4px; }
+.bubble.me{ background:var(--ink); color:var(--paper); align-self:flex-end; border-bottom-right-radius:4px; }
+.typing-dots{ display:inline-flex; gap:4px; align-items:center; padding:2px 0; }
+.typing-dots span{ width:6px; height:6px; border-radius:50%; background:var(--ink-soft); opacity:0.5; animation:typingBounce 1s infinite ease-in-out; }
+.typing-dots span:nth-child(2){ animation-delay:0.15s; }
+.typing-dots span:nth-child(3){ animation-delay:0.3s; }
+@keyframes typingBounce{ 0%,60%,100%{ transform:translateY(0); opacity:0.5; } 30%{ transform:translateY(-4px); opacity:1; } }
+.nani-head{ display:flex; align-items:center; gap:8px; margin-bottom:14px; }
+.nani-head .ic{ font-size:2.1rem; }
+.chips-row{ display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 12px; }
+.sugg{ background:var(--paper-dim); border:1px solid var(--line); border-radius:100px; padding:8px 13px; font-size:0.78rem; font-weight:700; }
+.sugg.active{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+.chat-input-row{ display:flex; gap:8px; padding-top:8px; border-top:1px solid var(--line); }
+.chat-input-row input{
+  flex:1; border:1px solid var(--line); border-radius:100px; padding:11px 15px; font-size:0.88rem;
+  background:var(--paper-dim); color:var(--ink); font-family:inherit;
+}
+.chat-input-row input:focus{ outline:2px solid var(--marigold); }
+.send-btn{ background:var(--madder); color:var(--paper); border:none; border-radius:50%; width:42px; height:42px; font-size:1.1rem; flex-shrink:0; }
+
+/* ---------- Community ---------- */
+.post{ display:flex; gap:12px; }
+.post .avatar{ width:38px; height:38px; border-radius:50%; background:var(--sand); display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; }
+.post .meta{ font-size:0.72rem; color:var(--ink-soft); margin-bottom:4px; }
+.post h3{ font-size:0.95rem; margin-bottom:4px; }
+.post p{ font-size:0.85rem; color:var(--ink-soft); line-height:1.4; }
+.post .cat{ display:inline-block; margin-top:8px; background:var(--sand); border-radius:100px; padding:3px 10px; font-size:0.68rem; font-weight:800; }
+.form-field{ margin-bottom:10px; }
+.form-field label{ display:block; font-size:0.78rem; font-weight:700; margin-bottom:5px; color:var(--ink-soft); }
+.form-field input, .form-field select, .form-field textarea{
+  width:100%; border:1px solid var(--line); border-radius:10px; padding:10px 12px;
+  font-family:inherit; font-size:0.88rem; background:var(--paper-dim); color:var(--ink);
+}
+.form-field textarea{ resize:vertical; min-height:70px; }
+
+.rec-box{ display:flex; align-items:center; gap:14px; }
+.rec-btn{
+  width:56px; height:56px; border-radius:50%; background:var(--madder); color:var(--paper);
+  border:none; font-size:1.3rem; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+}
+.rec-btn.recording{ animation:pulse 1.1s infinite; }
+@keyframes pulse{ 0%{box-shadow:0 0 0 0 rgba(178,58,72,0.5);} 70%{box-shadow:0 0 0 14px rgba(178,58,72,0);} 100%{box-shadow:0 0 0 0 rgba(178,58,72,0);} }
+.rec-txt{ font-size:0.85rem; color:var(--ink-soft); }
+.rec-timer{ font-weight:800; font-family:'Fraunces',serif; font-size:1.1rem; }
+.rec-player{ margin-top:12px; }
+.rec-player audio{ width:100%; }
+
+/* ---------- Leaderboard ---------- */
+.lb-row{ display:flex; align-items:center; gap:12px; padding:11px 4px; border-bottom:1px solid var(--line); }
+.lb-rank{ width:26px; text-align:center; font-family:'Fraunces',serif; font-weight:700; color:var(--ink-soft); }
+.lb-row:nth-child(1) .lb-rank{ color:var(--marigold-deep); }
+.lb-row:nth-child(2) .lb-rank{ color:var(--ink-soft); }
+.lb-row:nth-child(3) .lb-rank{ color:var(--madder); }
+.lb-avatar{ width:34px; height:34px; border-radius:50%; background:var(--sand); display:flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0; }
+.lb-name{ flex:1; font-weight:700; font-size:0.9rem; }
+.lb-role{ font-size:0.7rem; color:var(--ink-soft); font-weight:500; }
+.lb-xp{ font-weight:800; color:var(--peacock); font-size:0.9rem; }
+.lb-row.me{ background:rgba(232,166,61,0.16); border-radius:10px; }
+
+/* ---------- Modals ---------- */
+.modal-backdrop{
+  position:fixed; inset:0; background:rgba(28,19,48,0.55); z-index:60;
+  display:none; align-items:flex-end; justify-content:center;
+}
+.modal-backdrop.show{ display:flex; }
+.modal-sheet{
+  background:var(--paper); width:100%; max-width:480px; border-radius:20px 20px 0 0;
+  padding:20px 18px calc(20px + env(safe-area-inset-bottom,0px)); max-height:88vh; overflow-y:auto;
+  animation:sheetup .3s ease;
+}
+@keyframes sheetup{ from{ transform:translateY(30px); opacity:0; } to{ transform:translateY(0); opacity:1; } }
+.modal-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+.modal-close{ background:var(--paper-dim); border:none; width:32px; height:32px; border-radius:50%; font-size:1rem; }
+
+.scan-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
+.scan-opt{ background:var(--paper-dim); border:1px solid var(--line); border-radius:14px; padding:14px 8px; text-align:center; }
+.scan-opt .ic{ font-size:2rem; }
+.scan-opt .slbl{ font-size:0.75rem; font-weight:700; margin-top:6px; }
+.viewfinder{
+  border:2px dashed var(--madder); border-radius:16px; padding:26px 10px; text-align:center;
+  color:var(--ink-soft); font-size:0.85rem; margin-bottom:6px;
+}
+.scan-result .ic{ font-size:2.4rem; }
+
+.streak-strip{ display:flex; justify-content:space-between; margin:16px 0; }
+.sday{ display:flex; flex-direction:column; align-items:center; gap:6px; font-size:0.7rem; font-weight:700; color:var(--ink-soft); }
+.sflame{ width:34px; height:34px; border-radius:50%; background:var(--paper-dim); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:1rem; }
+.sflame.done{ background:var(--madder); border-color:var(--madder); }
+.sflame.today{ box-shadow:0 0 0 3px rgba(232,166,61,0.5); }
+
+/* toast */
+#toast{
+  position:fixed; left:50%; bottom:82px; transform:translate(-50%,20px);
+  background:var(--ink); color:var(--paper); padding:10px 18px; border-radius:100px;
+  font-size:0.82rem; font-weight:700; z-index:80; opacity:0; pointer-events:none;
+  transition:all .3s ease; white-space:nowrap; max-width:88vw; overflow:hidden; text-overflow:ellipsis;
+}
+#toast.show{ opacity:1; transform:translate(-50%,0); }
+
+/* ---------- Desktop layout ---------- */
+@media (min-width:900px){
+  nav#mainNav{
+    position:sticky; top:0; left:0; bottom:auto; height:100vh;
+    width:220px; flex-direction:column; justify-content:flex-start; align-items:stretch;
+    padding:26px 14px; gap:6px; box-shadow:2px 0 20px var(--shadow-ink); overflow-x:visible;
+  }
+  nav#mainNav .brand{ color:var(--marigold); font-family:'Fraunces',serif; font-size:1.3rem; padding:0 8px 22px; }
+  nav#mainNav button{ flex-direction:row; justify-content:flex-start; gap:12px; font-size:0.86rem; padding:11px 12px; min-width:0; }
+  nav#mainNav button .ic{ font-size:1.2rem; }
+  .fab{ right:32px; bottom:32px; }
+  #content{ padding:32px 40px 60px; max-width:820px; }
+  .tile-grid{ grid-template-columns:repeat(6,1fr); }
+  .stamp-grid{ grid-template-columns:repeat(5,1fr); }
+  .chat-wrap{ height:calc(100vh - 220px); }
+}
+@media (min-width:600px) and (max-width:899px){
+  .tile-grid{ grid-template-columns:repeat(4,1fr); }
+}
+</style>
+</head>
+<body>
+
+<div id="onboard">
+  <div class="ob-hero">
+    <div class="deva">रीति</div>
+    <h1>Reeti</h1>
+    <p>Discover, play, scan and preserve India's living heritage.<br>Tell us a bit about you so we can tailor your journey.</p>
+  </div>
+  <div class="ob-name">
+    <label>Your name (shown on the leaderboard &amp; your posts)</label>
+    <input id="obNameInput" placeholder="e.g. Priya" maxlength="24">
+  </div>
+  <div class="role-pick">
+    <button class="role-opt" onclick="selectRole('student')">
+      <span class="ic">🎓</span>
+      <span><h3>Student</h3><p>Learn heritage through stories, quizzes and games</p></span>
+    </button>
+    <button class="role-opt" onclick="selectRole('traveler')">
+      <span class="ic">🧭</span>
+      <span><h3>Traveler</h3><p>Scan monuments and craft, collect passport stamps</p></span>
+    </button>
+    <button class="role-opt" onclick="selectRole('local')">
+      <span class="ic">🏘️</span>
+      <span><h3>Local Storyteller</h3><p>Record and share your region's traditions</p></span>
+    </button>
+  </div>
+</div>
+
+<div id="app">
+  <nav id="mainNav">
+    <div class="brand deva">रीति</div>
+    <button data-view="home" onclick="goto('home')"><span class="ic">🏠</span><span>Home</span></button>
+    <button data-view="map" onclick="goto('map')"><span class="ic">🗺️</span><span>Map</span></button>
+    <button data-view="games" onclick="goto('games')"><span class="ic">🎲</span><span>Games</span></button>
+    <button data-view="passport" onclick="goto('passport')"><span class="ic">📘</span><span>Passport</span></button>
+    <button data-view="community" onclick="goto('community')"><span class="ic">🤝</span><span>Community</span></button>
+    <button data-view="nani" onclick="goto('nani')"><span class="ic">👵</span><span>Ask Nani</span></button>
+  </nav>
+
+  <div id="content">
+    <div class="topbar">
+      <div class="greet">
+        <span class="deva" id="greetLine">नमस्ते</span>
+        <span class="sub" id="greetSub">Welcome back, Explorer</span>
+      </div>
+      <div class="chips">
+        <button class="streak-chip" onclick="openStreak()">🔥 <span id="streakNum">0</span></button>
+        <button class="level-chip" onclick="goto('passport')">⭐ <span id="levelNum">1</span></button>
+        <button class="logout-btn" onclick="logout()" title="Log out">🚪</button>
+      </div>
+    </div>
+
+    <!-- HOME -->
+    <section class="view active" id="view-home">
+      <div class="card hero">
+        <h2 id="questTitle">Today's Quest</h2>
+        <p class="sub" id="questSub">Explore one new region on the Heritage Map and earn your first stamp.</p>
+        <div style="margin-top:14px;"><button class="btn" onclick="goto('map')">Start exploring</button></div>
+      </div>
+
+      <div class="section-title">Everything in one place</div>
+      <div class="tile-grid">
+        <button class="tile" onclick="goto('map')"><span class="ic">🗺️</span><span class="lbl">Heritage Map</span></button>
+        <button class="tile" onclick="goto('games')"><span class="ic">🎲</span><span class="lbl">Traditional Games</span></button>
+        <button class="tile" onclick="openScan()"><span class="ic">📸</span><span class="lbl">Scan &amp; Learn</span></button>
+        <button class="tile" onclick="goto('passport')"><span class="ic">📘</span><span class="lbl">Cultural Passport</span></button>
+        <button class="tile" onclick="showDnaTab()"><span class="ic">🧬</span><span class="lbl">Cultural DNA</span></button>
+        <button class="tile" onclick="goto('nani')"><span class="ic">👵</span><span class="lbl">Ask Nani</span></button>
+      </div>
+
+      <div class="card role-card" id="roleCard"></div>
+
+      <div class="section-title" style="margin-top:22px;">From the community <span class="sync-note">🌐 shared with everyone</span></div>
+      <div id="homeCommunityPreview"></div>
+    </section>
+
+    <!-- MAP -->
+    <section class="view" id="view-map">
+      <div class="section-title">Heritage Map</div>
+      <p class="section-lead">A compass of India's regions. Tap a pin to open its cultural page and stamp your passport.</p>
+      <div class="compass-wrap" id="compassWrap">
+        <div class="compass-center">REETI</div>
+      </div>
+      <div id="regionDetail" class="card region-detail"></div>
+    </section>
+
+    <!-- GAMES -->
+    <section class="view" id="view-games">
+      <div class="section-title">Traditional Games</div>
+      <p class="section-lead">Play folk games reimagined for the screen.</p>
+      <div class="game-list" id="gameList"></div>
+
+      <div id="memoryGameArea" style="display:none; margin-top:16px;">
+        <div class="card">
+          <h3 style="font-size:0.98rem; margin-bottom:8px;">🃏 Memory of Motifs</h3>
+          <div class="game-stats"><span>Moves: <span id="mgMoves">0</span></span><span>Matches: <span id="mgMatches">0</span>/8</span></div>
+          <div class="memory-grid" id="memoryGrid"></div>
+          <button class="btn small" onclick="startMemoryGame()">Restart</button>
+        </div>
+      </div>
+
+      <div id="quizArea" style="display:none; margin-top:16px;">
+        <div class="card" id="quizCard"></div>
+      </div>
+    </section>
+
+    <!-- PASSPORT -->
+    <section class="view" id="view-passport">
+      <div class="section-title">Cultural Passport</div>
+      <div class="passport-book">
+        <div class="pb-top">
+          <div class="pb-avatar" id="pbAvatar">🧑</div>
+          <div>
+            <div class="pb-name" id="pbName" onclick="renameProfile()" title="Tap to rename" style="cursor:pointer;">Explorer</div>
+            <div class="pb-role" id="pbRole">Traveler</div>
+          </div>
+        </div>
+        <div class="xpbar-track"><div class="xpbar-fill" id="xpFill" style="width:0%"></div></div>
+        <div class="xp-lbl" id="xpLbl">0 / 100 XP to next level</div>
+      </div>
+
+      <div class="passport-tabs">
+        <button class="ptab active" id="tabStamps" onclick="setPassportTab('stamps')">Stamps</button>
+        <button class="ptab" id="tabDna" onclick="setPassportTab('dna')">Cultural DNA</button>
+        <button class="ptab" id="tabLb" onclick="setPassportTab('lb')">🏆 Rank</button>
+      </div>
+
+      <div class="ppanel active" id="panel-stamps">
+        <div class="stamp-grid" id="stampGrid"></div>
+      </div>
+      <div class="ppanel" id="panel-dna">
+        <p class="section-lead">Your Cultural DNA grows as you explore, play, scan and share. Reach 100% to master a strand.</p>
+        <div id="dnaBars"></div>
+      </div>
+      <div class="ppanel" id="panel-lb">
+        <p class="section-lead">Earn XP by exploring the map, playing games, scanning objects and sharing stories. <span class="sync-note">🌐 shared with everyone</span></p>
+        <div class="card" id="lbCard"></div>
+      </div>
+
+      <div class="card" style="margin-top:6px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+          <div><h3 style="font-size:0.9rem;">Reset demo progress</h3><p style="font-size:0.78rem; color:var(--ink-soft); margin-top:2px;">Clears your XP, stamps and streak so you can replay the demo.</p></div>
+          <button class="btn small outline" onclick="resetProgress()">Reset</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- COMMUNITY -->
+    <section class="view" id="view-community">
+      <div class="section-title">Community Wall <span class="sync-note">🌐 shared with everyone</span></div>
+      <p class="section-lead">Real traditions, shared by real people. Add your own to earn the Storyteller stamp.</p>
+
+      <div class="card">
+        <h3 style="font-size:0.95rem; margin-bottom:10px;">🎙️ Record an oral story</h3>
+        <div class="rec-box">
+          <button class="rec-btn" id="recBtn" onclick="toggleRecording()">🎤</button>
+          <div>
+            <div class="rec-timer" id="recTimer">00:00</div>
+            <div class="rec-txt" id="recStatus">Tap to record a memory, proverb or folk tune</div>
+          </div>
+        </div>
+        <div class="rec-player" id="recPlayer"></div>
+      </div>
+
+      <div class="card">
+        <div class="form-field"><label>Title</label><input id="postTitle" placeholder="e.g. The story behind our harvest lamp"></div>
+        <div class="form-field"><label>Category</label>
+          <select id="postCategory">
+            <option>Festival</option><option>Craft</option><option>Food</option><option>Folklore</option><option>Music &amp; Dance</option>
+          </select>
+        </div>
+        <div class="form-field"><label>Your story</label><textarea id="postText" placeholder="Share a tradition, recipe or memory..."></textarea></div>
+        <button class="btn" onclick="submitPost()">Share with community</button>
+      </div>
+
+      <div class="chips-row" id="communityFilters"></div>
+      <div id="communityFeed"></div>
+    </section>
+
+    <!-- ASK NANI -->
+    <section class="view" id="view-nani">
+      <div class="nani-head">
+        <span class="ic">👵</span>
+        <div><h2 style="font-size:1.1rem;">Ask Nani</h2><p class="sub" style="color:var(--ink-soft); font-size:0.8rem;">Your AI cultural companion</p></div>
+      </div>
+      <div class="chat-wrap">
+        <div class="chat-scroll" id="chatScroll"></div>
+        <div class="chips-row" id="chatChips">
+          <button class="sugg" onclick="askNani('Tell me a folktale')">Tell me a folktale</button>
+          <button class="sugg" onclick="askNani('What festival is today')">What festival is today?</button>
+          <button class="sugg" onclick="askNani('Share a proverb')">Share a proverb</button>
+          <button class="sugg" onclick="askNani('Riddle me something')">Riddle me!</button>
+        </div>
+        <div class="chat-input-row">
+          <input id="chatInput" placeholder="Ask Nani anything about India's culture..." onkeydown="if(event.key==='Enter'){askNani(document.getElementById('chatInput').value)}">
+          <button class="send-btn" onclick="askNani(document.getElementById('chatInput').value)">➤</button>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<button class="fab" onclick="openScan()" title="Scan & Learn">📸</button>
+
+<!-- Scan Modal -->
+<div class="modal-backdrop" id="scanModal">
+  <div class="modal-sheet">
+    <div class="modal-head"><h2 style="font-size:1.1rem;">Scan &amp; Learn</h2><button class="modal-close" onclick="closeModal('scanModal')">✕</button></div>
+    <div id="scanBody">
+      <div class="viewfinder">📷 Point your camera at a heritage object.<br>For this demo, tap a sample below.</div>
+      <div class="scan-grid" id="scanOptions"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Streak Modal -->
+<div class="modal-backdrop" id="streakModal">
+  <div class="modal-sheet">
+    <div class="modal-head"><h2 style="font-size:1.1rem;">Cultural Streak</h2><button class="modal-close" onclick="closeModal('streakModal')">✕</button></div>
+    <p class="section-lead">Check in daily to keep your flame alive and unlock the 7-Day badge.</p>
+    <div class="streak-strip" id="streakStrip"></div>
+    <button class="btn" id="checkinBtn" onclick="checkIn()">Check in today</button>
+  </div>
+</div>
+
+<!-- Confirm / Prompt Modal -->
+<div class="modal-backdrop" id="askModal">
+  <div class="modal-sheet">
+    <div class="modal-head"><h2 style="font-size:1.1rem;" id="askTitle">Are you sure?</h2><button class="modal-close" onclick="closeAsk(false)">✕</button></div>
+    <p class="section-lead" id="askMessage"></p>
+    <div class="form-field" id="askInputWrap" style="display:none;">
+      <input id="askInput" maxlength="24" onkeydown="if(event.key==='Enter'){closeAsk(true)}">
+    </div>
+    <div style="display:flex; gap:10px; margin-top:6px;">
+      <button class="btn outline small" style="flex:1;" onclick="closeAsk(false)" id="askCancelBtn">Cancel</button>
+      <button class="btn small" style="flex:1;" onclick="closeAsk(true)" id="askConfirmBtn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ===================== DATA ===================== */
+var REGIONS = {
+  north:{name:'Kashmir & the North', ic:'🏔️', pos:[50,12], festival:'Shikara Festival', craft:'Pashmina weaving', food:'Rogan Josh', fact:'Kashmiri papier-mache art traces back to 15th-century Persian craftsmen.'},
+  east:{name:'West Bengal & the East', ic:'🪔', pos:[84,30], festival:'Durga Puja', craft:'Terracotta pottery', food:'Shorshe Ilish', fact:'Durga Puja pandals are rebuilt as temporary art installations every single year.'},
+  northeast:{name:'Nagaland & the Northeast', ic:'🪶', pos:[84,70], festival:'Hornbill Festival', craft:'Naga bamboo weaving', food:'Smoked pork with bamboo shoot', fact:'The Hornbill Festival brings together all 16 major Naga tribes each December.'},
+  south:{name:'Tamil Nadu & the South', ic:'🛕', pos:[50,88], festival:'Pongal', craft:'Bharatanatyam', food:'Sambar and Dosa', fact:'Bharatanatyam is considered one of the oldest classical dance forms, over 2000 years old.'},
+  central:{name:'Madhya Pradesh & Central India', ic:'🎨', pos:[16,70], festival:'Bhagoria Festival', craft:'Gond tribal art', food:'Poha Jalebi', fact:'Gond art uses dots and dashes to represent the pulse of life in every creature.'},
+  west:{name:'Rajasthan & the West', ic:'🐫', pos:[16,30], festival:'Pushkar Camel Fair', craft:'Puppetry (Kathputli)', food:'Dal Baati Churma', fact:'Rajasthani folk puppeteers have performed epic tales for over 1,000 years.'}
+};
+var GAME_SYMBOLS = ['🪔','🥁','🦚','🐘','🎭','🪁','🌺','🕌'];
+var SCAN_SAMPLES = {
+  diya:{ic:'🪔', name:'Clay Diya Lamp', origin:'Pan-India', era:'Ancient, still made today', fact:'Diyas are lit during Diwali to symbolise the victory of light over darkness.'},
+  warli:{ic:'🖼️', name:'Warli Painting', origin:'Maharashtra', era:'Tribal art, 2500+ years old', fact:'Warli art uses only white pigment on mud walls, built from simple circles, triangles and squares.'},
+  sitar:{ic:'🎻', name:'Sitar', origin:'North India', era:'13th century onward', fact:'The sitar typically has 18 to 21 strings, but only 6 or 7 are played directly.'},
+  madhubani:{ic:'🐟', name:'Madhubani Fish Motif', origin:'Bihar', era:'Ancient folk art', fact:'Madhubani paintings were traditionally made by women on freshly plastered mud walls.'}
+};
+var BADGES = [
+  {id:'mapExplorer', ic:'🗺️', label:'Map Explorer'},
+  {id:'gamer', ic:'🎲', label:'Game Player'},
+  {id:'scanner', ic:'📸', label:'Scanner'},
+  {id:'storyteller', ic:'✍️', label:'Storyteller'},
+  {id:'quizzer', ic:'🧠', label:'Quiz Master'},
+  {id:'streak7', ic:'🔥', label:'7-Day Flame'},
+  {id:'cultureMaster', ic:'👑', label:'Culture Master'}
+];
+var QUIZ = [
+  {q:'Which classical dance form originated in Tamil Nadu?', opts:['Bharatanatyam','Kathak','Odissi','Manipuri'], a:0},
+  {q:'The Hornbill Festival is celebrated in which state?', opts:['Kerala','Nagaland','Punjab','Gujarat'], a:1},
+  {q:'Warli painting traditionally uses which base colour?', opts:['Black on red','White on mud brown','Gold on blue','Green on white'], a:1},
+  {q:'Pongal is mainly a festival of which kind?', opts:['Harvest','Monsoon','New Year only','Full moon'], a:0},
+  {q:'Madhubani art traditionally comes from which state?', opts:['Bihar','Odisha','Assam','Goa'], a:0}
+];
+var NANI_RESPONSES = [
+  {k:['folktale','story','tale'], r:'Long ago, a clever crow found a pot with a little water at the bottom. Too small to reach, she dropped pebbles in, one by one, until the water rose enough to drink. We tell children this tale to teach patience over strength.'},
+  {k:['festival','today'], r:'Every season carries a festival somewhere in India, think of Onam flower carpets in Kerala or Bihu harvest drums in Assam. Open the Heritage Map to see festivals by region!'},
+  {k:['proverb','saying'], r:'Here is one my mother taught me: \u201cboond boond se sagar banta hai\u201d, drop by drop, an ocean is formed. Small, steady effort builds something vast.'},
+  {k:['riddle'], r:'Try this one: I have keys but no locks, space but no rooms, and you can enter but never leave. What am I? ... A keyboard!'},
+  {k:['craft','art'], r:'Every region has its own hands-and-thread story, Warli dots in Maharashtra, Madhubani lines in Bihar, Pattachitra scrolls in Odisha. Scan an object with Scan and Learn to meet one up close.'},
+  {k:['food','recipe','dish'], r:'Food carries memory better than anything else. Ask any grandmother about her festival dish and you will get a whole family history alongside the recipe!'},
+  {k:['hello','hi','namaste'], r:'Namaste, beta! Sit with me, what part of our culture would you like to explore today?'}
+];
+var ROLE_META = {
+  student:{ic:'🎓', label:'Student', avatar:'🎓',
+    cardIc:'📘', cardTitle:'Today\u2019s Lesson', cardBody:'Try the Daily Culture Quiz in Traditional Games, three quick questions with instant XP.', cardBtn:'Open games', cardGo:'games'},
+  traveler:{ic:'🧭', label:'Traveler', avatar:'🧭',
+    cardIc:'📍', cardTitle:'Nearby Heritage Spots', cardBody:'Three places worth a detour today: a stepwell, a weaving cluster and a folk-art village.', cardBtn:'Open map', cardGo:'map'},
+  local:{ic:'🏘️', label:'Local Storyteller', avatar:'🏘️',
+    cardIc:'✍️', cardTitle:'Share Your Culture', cardBody:'Your region has stories only you know. Record or write one for travelers and students to discover.', cardBtn:'Share a story', cardGo:'community'}
+};
+
+/* ===================== STATE ===================== */
+function defaultState(){
+  return {
+    role: null,
+    name: 'Explorer',
+    hasOnboarded: false,
+    xp: 0,
+    streak: 0,
+    streakDone: [false,false,false,false,false,false,false],
+    checkedInToday:false,
+    badges:{mapExplorer:false, gamer:false, scanner:false, storyteller:false, quizzer:false, streak7:false, cultureMaster:false},
+    dna:{festivals:5, cuisine:5, crafts:5, language:5, folklore:5, music:5},
+    visitedRegions:[],
+    gamesPlayed:0,
+    scans:[],
+    quizDone:false
+  };
+}
+var state = defaultState();
+var chatLog = [{from:'nani', text:'Namaste, beta! I am Nani, your cultural companion. Ask me about folktales, festivals, proverbs, or anything about our heritage.'}];
+var community = [
+  {author:'Meera K.', role:'Local Storyteller', title:'Our village makes rangoli with rice flour, never chalk', category:'Craft', text:'Every morning my grandmother wakes before sunrise to lay rice-flour rangoli at our doorstep. It feeds ants and small birds, so the art itself is an act of kindness.'},
+  {author:'Arjun P.', role:'Traveler', title:'A tea seller told me the real story of Onam', category:'Festival', text:'A chai vendor in Kochi told me Onam boat races began as a way for kingdoms to settle disputes without war. I have not stopped thinking about it since.'},
+  {author:'Fatima R.', role:'Student', title:'One lullaby, three languages', category:'Folklore', text:'My nani sings the same lullaby in Urdu, Punjabi and Bengali depending on her mood. I am writing all three versions down before they are forgotten.'}
+];
+var leaderboard = {
+  'Meera K.': {xp:180, role:'Local Storyteller'},
+  'Arjun P.': {xp:140, role:'Traveler'},
+  'Fatima R.': {xp:95, role:'Student'}
+};
+var storageReady = (typeof window!=='undefined' && window.storage && typeof window.storage.get==='function');
+
+/* ===================== PERSISTENCE ===================== */
+async function loadFromStorage(){
+  if(!storageReady) return;
+  try{
+    var p = await window.storage.get('profile', false);
+    if(p && p.value){
+      var saved = JSON.parse(p.value);
+      state = Object.assign(defaultState(), saved);
+    }
+  }catch(e){ /* no saved profile yet */ }
+  try{
+    var cl = await window.storage.get('chatlog', false);
+    if(cl && cl.value){ chatLog = JSON.parse(cl.value); }
+  }catch(e){}
+  try{
+    var cw = await window.storage.get('community-wall', true);
+    if(cw && cw.value){ community = JSON.parse(cw.value); }
+    else { await window.storage.set('community-wall', JSON.stringify(community), true); }
+  }catch(e){}
+  try{
+    var lb = await window.storage.get('leaderboard', true);
+    if(lb && lb.value){ leaderboard = JSON.parse(lb.value); }
+    else { await window.storage.set('leaderboard', JSON.stringify(leaderboard), true); }
+  }catch(e){}
+
+  if(state.role){
+    document.getElementById('onboard').style.display = 'none';
+  }
+  renderAll();
+}
+function saveProfile(){
+  if(!storageReady) return;
+  window.storage.set('profile', JSON.stringify(state), false).catch(function(){});
+}
+function saveChat(){
+  if(!storageReady) return;
+  window.storage.set('chatlog', JSON.stringify(chatLog), false).catch(function(){});
+}
+function saveCommunity(){
+  if(!storageReady) return;
+  window.storage.set('community-wall', JSON.stringify(community), true).catch(function(){});
+}
+function saveLeaderboard(){
+  if(!storageReady) return;
+  window.storage.set('leaderboard', JSON.stringify(leaderboard), true).catch(function(){});
+}
+function syncLeaderboardEntry(){
+  var rm = ROLE_META[state.role] || ROLE_META.traveler;
+  leaderboard[state.name || 'Explorer'] = {xp: state.xp, role: rm.label};
+  saveLeaderboard();
+}
+
+/* ===================== INIT ===================== */
+function selectRole(role){
+  var nameInput = document.getElementById('obNameInput').value.trim();
+  state.role = role;
+  if(nameInput) state.name = nameInput;
+  else if(!state.name) state.name = 'Explorer';
+  document.getElementById('onboard').style.display = 'none';
+  renderAll();
+  if(!state.hasOnboarded){
+    state.hasOnboarded = true;
+    addXp(10);
+    toast('Welcome, ' + state.name + '! +10 XP');
+  } else {
+    toast('Welcome back, ' + state.name + '!');
+  }
+  saveProfile();
+}
+
+function logout(){
+  askConfirm('Log out and go back to role selection? Your XP, stamps and stories stay saved.', function(){
+    state.role = null;
+    saveProfile();
+    var input = document.getElementById('obNameInput');
+    if(input) input.value = (state.name && state.name !== 'Explorer') ? state.name : '';
+    document.getElementById('onboard').style.display = 'flex';
+    toast('Logged out');
+  });
+}
+
+function goto(view){
+  document.querySelectorAll('.view').forEach(function(v){ v.classList.remove('active'); });
+  document.getElementById('view-' + view).classList.add('active');
+  document.querySelectorAll('#mainNav button[data-view]').forEach(function(b){
+    b.classList.toggle('active', b.dataset.view === view);
+  });
+  var fab = document.querySelector('.fab');
+  if(fab){ fab.style.display = (view === 'nani') ? 'none' : 'flex'; }
+  window.scrollTo({top:0, behavior:'instant'});
+}
+
+function toast(msg){
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 2200);
+}
+
+function addXp(n){
+  var levelBefore = Math.floor(state.xp / 100) + 1;
+  state.xp += n;
+  var levelAfter = Math.floor(state.xp / 100) + 1;
+  renderPassport();
+  syncLeaderboardEntry();
+  saveProfile();
+  if(levelAfter > levelBefore){
+    setTimeout(function(){ toast('🎉 Level up! You are now Level ' + levelAfter); }, 350);
+  }
+}
+
+function unlockBadge(id, label){
+  if(!state.badges[id]){
+    state.badges[id] = true;
+    renderPassport();
+    toast('Stamp unlocked: ' + label);
+    saveProfile();
+  }
+}
+
+/* ===================== HOME ===================== */
+function renderHome(){
+  var rm = ROLE_META[state.role] || ROLE_META.traveler;
+  document.getElementById('greetSub').textContent = 'Welcome back, ' + state.name;
+  var rc = document.getElementById('roleCard');
+  rc.innerHTML = '<span class="ic">' + rm.cardIc + '</span><div class="txt"><h3>' + rm.cardTitle + '</h3><p>' + rm.cardBody + '</p></div>';
+  var goFn = rm.cardGo;
+  rc.onclick = function(){ goto(goFn); };
+
+  var preview = document.getElementById('homeCommunityPreview');
+  preview.innerHTML = community.slice(0,2).map(function(p){
+    return '<div class="card post"><div class="avatar">' + '\ud83d\ude42' + '</div><div><div class="meta">' + p.author + ' \u00b7 ' + p.role + '</div><h3>' + p.title + '</h3></div></div>';
+  }).join('');
+}
+
+/* ===================== MAP ===================== */
+function renderMap(){
+  var wrap = document.getElementById('compassWrap');
+  var old = wrap.querySelectorAll('.pin');
+  old.forEach(function(p){ p.remove(); });
+  Object.keys(REGIONS).forEach(function(key){
+    var r = REGIONS[key];
+    var pin = document.createElement('button');
+    pin.className = 'pin' + (state.visitedRegions.indexOf(key) > -1 ? ' visited' : '');
+    pin.style.left = r.pos[0] + '%';
+    pin.style.top = r.pos[1] + '%';
+    pin.innerHTML = '<span>' + r.ic + '</span><span class="plbl">' + r.name.split(' ')[0] + '</span>';
+    pin.onclick = function(){ openRegion(key); };
+    wrap.appendChild(pin);
+  });
+}
+
+function openRegion(key){
+  var r = REGIONS[key];
+  var d = document.getElementById('regionDetail');
+  d.classList.add('show');
+  var visited = state.visitedRegions.indexOf(key) > -1;
+  d.innerHTML =
+    '<div class="rd-head"><span class="ic">' + r.ic + '</span><div><h2 style="font-size:1.1rem;">' + r.name + '</h2></div></div>' +
+    '<div class="rd-tags"><span class="tag">Festival: ' + r.festival + '</span><span class="tag">Craft: ' + r.craft + '</span><span class="tag">Food: ' + r.food + '</span></div>' +
+    '<div class="fact">' + r.fact + '</div>' +
+    '<div style="margin-top:14px;"><button class="btn" ' + (visited ? 'disabled' : '') + ' onclick="stampRegion(\'' + key + '\')">' + (visited ? 'Stamped in passport' : 'Add to passport') + '</button></div>';
+  d.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function stampRegion(key){
+  if(state.visitedRegions.indexOf(key) > -1) return;
+  state.visitedRegions.push(key);
+  addXp(15);
+  state.dna.festivals = Math.min(100, state.dna.festivals + 8);
+  state.dna.crafts = Math.min(100, state.dna.crafts + 6);
+  unlockBadge('mapExplorer', 'Map Explorer');
+  renderMap();
+  openRegion(key);
+  toast('Stamped ' + REGIONS[key].name + ' +15 XP');
+  if(state.visitedRegions.length === Object.keys(REGIONS).length){
+    setTimeout(function(){
+      addXp(30);
+      unlockBadge('cultureMaster', 'Culture Master');
+      toast('👑 All regions explored! +30 bonus XP');
+    }, 900);
+  }
+}
+
+/* ===================== GAMES ===================== */
+function renderGames(){
+  var list = document.getElementById('gameList');
+  list.innerHTML =
+    '<div class="card game-card"><span class="ic">\ud83c\udccf</span><div class="txt"><h3>Memory of Motifs</h3><p>Match pairs of festival and folk-art symbols</p></div><button class="btn small" onclick="showMemoryGame()">Play</button></div>' +
+    '<div class="card game-card"><span class="ic">\ud83e\udde0</span><div class="txt"><h3>Daily Culture Quiz</h3><p>Five quick questions on festivals, art and dance</p></div><button class="btn small" onclick="showQuiz()">Play</button></div>' +
+    '<div class="card game-card lock"><span class="ic">\ud83d\udc0d</span><div class="txt"><h3>Gyan Chaupar</h3><p>The original snakes and ladders, with virtues and vices</p></div><button class="btn small" disabled>Coming soon</button></div>';
+}
+
+var mg = { cards:[], flipped:[], matched:0, moves:0, lock:false, matchedIdx:[] };
+function showMemoryGame(){
+  document.getElementById('memoryGameArea').style.display = 'block';
+  document.getElementById('quizArea').style.display = 'none';
+  startMemoryGame();
+  document.getElementById('memoryGameArea').scrollIntoView({behavior:'smooth'});
+}
+function startMemoryGame(){
+  var deck = GAME_SYMBOLS.concat(GAME_SYMBOLS);
+  for(var i = deck.length - 1; i > 0; i--){
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = deck[i]; deck[i] = deck[j]; deck[j] = tmp;
+  }
+  mg = { cards:deck, flipped:[], matched:0, moves:0, lock:false, matchedIdx:[] };
+  renderMemoryGrid();
+  document.getElementById('mgMoves').textContent = 0;
+  document.getElementById('mgMatches').textContent = 0;
+}
+function renderMemoryGrid(){
+  var grid = document.getElementById('memoryGrid');
+  grid.innerHTML = mg.cards.map(function(sym, i){
+    var isFlipped = mg.flipped.indexOf(i) > -1;
+    var isMatched = mg.matchedIdx.indexOf(i) > -1;
+    var shown = (isFlipped || isMatched) ? sym : '\u2756';
+    return '<button class="mcell ' + (isFlipped ? 'flip' : '') + ' ' + (isMatched ? 'matched' : '') + '" onclick="flipCard(' + i + ')">' + shown + '</button>';
+  }).join('');
+}
+function flipCard(i){
+  if(mg.lock || mg.flipped.indexOf(i) > -1 || mg.matchedIdx.indexOf(i) > -1) return;
+  mg.flipped.push(i);
+  renderMemoryGrid();
+  if(mg.flipped.length === 2){
+    mg.moves++;
+    document.getElementById('mgMoves').textContent = mg.moves;
+    mg.lock = true;
+    var a = mg.flipped[0], b = mg.flipped[1];
+    if(mg.cards[a] === mg.cards[b]){
+      mg.matchedIdx = mg.matchedIdx.concat([a, b]);
+      mg.matched++;
+      document.getElementById('mgMatches').textContent = mg.matched;
+      mg.flipped = [];
+      mg.lock = false;
+      renderMemoryGrid();
+      if(mg.matched === 8){
+        state.gamesPlayed++;
+        addXp(25);
+        state.dna.folklore = Math.min(100, state.dna.folklore + 10);
+        unlockBadge('gamer', 'Game Player');
+        setTimeout(function(){ toast('Board cleared in ' + mg.moves + ' moves +25 XP'); }, 200);
+      }
+    } else {
+      setTimeout(function(){ mg.flipped = []; mg.lock = false; renderMemoryGrid(); }, 700);
+    }
+  }
+}
+
+var quiz = { idx:0, score:0, answered:false };
+function showQuiz(){
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('memoryGameArea').style.display = 'none';
+  quiz = { idx:0, score:0, answered:false };
+  renderQuiz();
+  document.getElementById('quizArea').scrollIntoView({behavior:'smooth'});
+}
+function renderQuiz(){
+  var card = document.getElementById('quizCard');
+  if(quiz.idx >= QUIZ.length){
+    card.innerHTML =
+      '<h3 style="font-size:1.05rem; margin-bottom:8px;">Quiz complete</h3>' +
+      '<p class="section-lead">You scored ' + quiz.score + ' out of ' + QUIZ.length + '.</p>' +
+      '<button class="btn small" onclick="showQuiz()">Play again</button>';
+    return;
+  }
+  var q = QUIZ[quiz.idx];
+  card.innerHTML =
+    '<div class="quiz-progress">Question ' + (quiz.idx + 1) + ' of ' + QUIZ.length + '</div>' +
+    '<div class="quiz-q">' + q.q + '</div>' +
+    '<div class="quiz-opts" id="quizOpts">' +
+    q.opts.map(function(opt, i){ return '<button class="quiz-opt" onclick="answerQuiz(' + i + ')">' + opt + '</button>'; }).join('') +
+    '</div>';
+}
+function answerQuiz(i){
+  if(quiz.answered) return;
+  quiz.answered = true;
+  var q = QUIZ[quiz.idx];
+  var buttons = document.querySelectorAll('#quizOpts .quiz-opt');
+  buttons.forEach(function(btn, idx){
+    btn.disabled = true;
+    if(idx === q.a) btn.classList.add('correct');
+    else if(idx === i) btn.classList.add('wrong');
+  });
+  if(i === q.a) quiz.score++;
+  setTimeout(function(){
+    quiz.idx++;
+    quiz.answered = false;
+    renderQuiz();
+    if(quiz.idx >= QUIZ.length){
+      addXp(quiz.score * 6);
+      state.dna.language = Math.min(100, state.dna.language + 8);
+      state.dna.folklore = Math.min(100, state.dna.folklore + 6);
+      if(!state.quizDone){ state.quizDone = true; }
+      unlockBadge('quizzer', 'Quiz Master');
+      toast('Quiz complete, +' + (quiz.score * 6) + ' XP');
+      saveProfile();
+    }
+  }, 900);
+}
+
+/* ===================== PASSPORT ===================== */
+function setPassportTab(tab){
+  document.getElementById('tabStamps').classList.toggle('active', tab === 'stamps');
+  document.getElementById('tabDna').classList.toggle('active', tab === 'dna');
+  document.getElementById('tabLb').classList.toggle('active', tab === 'lb');
+  document.getElementById('panel-stamps').classList.toggle('active', tab === 'stamps');
+  document.getElementById('panel-dna').classList.toggle('active', tab === 'dna');
+  document.getElementById('panel-lb').classList.toggle('active', tab === 'lb');
+  if(tab === 'lb') renderLeaderboard();
+}
+function showDnaTab(){ goto('passport'); setPassportTab('dna'); }
+function renameProfile(){
+  askPrompt('Rename yourself', 'What should we call you?', state.name || 'Explorer', function(next){
+    next = next.slice(0,24);
+    var oldName = state.name;
+    state.name = next;
+    if(leaderboard[oldName]){ delete leaderboard[oldName]; }
+    syncLeaderboardEntry();
+    renderPassport();
+    renderHome();
+    renderLeaderboard();
+    saveProfile();
+    toast('Name updated to ' + state.name);
+  });
+}
+function resetProgress(){
+  askConfirm('Reset your XP, stamps, streak and scans? This cannot be undone.', function(){
+    var keepRole = state.role, keepName = state.name;
+    state = defaultState();
+    state.role = keepRole;
+    state.name = keepName;
+    renderAll();
+    saveProfile();
+    toast('Progress reset. Fresh start!');
+  });
+}
+
+function renderPassport(){
+  var level = Math.floor(state.xp / 100) + 1;
+  var prog = state.xp % 100;
+  document.getElementById('levelNum').textContent = level;
+  document.getElementById('xpFill').style.width = prog + '%';
+  document.getElementById('xpLbl').textContent = prog + ' / 100 XP to next level';
+  document.getElementById('streakNum').textContent = state.streak;
+  var rm = ROLE_META[state.role] || ROLE_META.traveler;
+  document.getElementById('pbAvatar').textContent = rm.avatar;
+  document.getElementById('pbName').textContent = state.name;
+  document.getElementById('pbRole').textContent = rm.label;
+
+  document.getElementById('stampGrid').innerHTML = BADGES.map(function(b){
+    var on = state.badges[b.id];
+    return '<div class="stamp ' + (on ? 'unlocked' : '') + '"><span class="ic">' + b.ic + '</span><span class="slbl">' + b.label + '</span></div>';
+  }).join('');
+
+  var dnaLabels = {
+    festivals:['Festivals', 'var(--madder)'],
+    cuisine:['Cuisine', 'var(--marigold)'],
+    crafts:['Crafts', 'var(--peacock)'],
+    language:['Language', 'var(--violet)'],
+    folklore:['Folklore', 'var(--madder)'],
+    music:['Music and Dance', 'var(--marigold-deep)']
+  };
+  document.getElementById('dnaBars').innerHTML = Object.keys(state.dna).map(function(k){
+    var meta = dnaLabels[k];
+    var val = state.dna[k];
+    return '<div class="dna-row"><div class="dna-lbl"><span>' + meta[0] + '</span><span>' + val + '%</span></div><div class="dna-track"><div class="dna-fill" style="width:' + val + '%; background:' + meta[1] + '"></div></div></div>';
+  }).join('');
+}
+
+/* ===================== COMMUNITY ===================== */
+var communityFilter = 'All';
+function renderCommunityFilters(){
+  var cats = ['All','Festival','Craft','Food','Folklore','Music & Dance'];
+  document.getElementById('communityFilters').innerHTML = cats.map(function(c){
+    return '<button class="sugg ' + (communityFilter === c ? 'active' : '') + '" onclick="setCommunityFilter(\'' + c.replace(/'/g,"") + '\')">' + c + '</button>';
+  }).join('');
+}
+function setCommunityFilter(c){
+  communityFilter = c;
+  renderCommunityFilters();
+  renderCommunity();
+}
+function renderCommunity(){
+  renderCommunityFilters();
+  var list = communityFilter === 'All' ? community : community.filter(function(p){ return p.category === communityFilter; });
+  var feed = document.getElementById('communityFeed');
+  if(list.length === 0){
+    feed.innerHTML = '<p class="section-lead">No stories in this category yet, be the first to share one.</p>';
+    return;
+  }
+  feed.innerHTML = list.map(function(p){
+    return '<div class="card post"><div class="avatar">\ud83d\ude42</div><div><div class="meta">' + p.author + ' \u00b7 ' + p.role + '</div><h3>' + p.title + '</h3><p>' + p.text + '</p><span class="cat">' + p.category + '</span></div></div>';
+  }).join('');
+}
+function submitPost(){
+  var title = document.getElementById('postTitle').value.trim();
+  var text = document.getElementById('postText').value.trim();
+  var category = document.getElementById('postCategory').value;
+  if(!title || !text){ toast('Add a title and a story first'); return; }
+  var rm = ROLE_META[state.role] || ROLE_META.traveler;
+  community.unshift({author: state.name, role: rm.label, title: title, category: category, text: text});
+  document.getElementById('postTitle').value = '';
+  document.getElementById('postText').value = '';
+  addXp(20);
+  state.dna.folklore = Math.min(100, state.dna.folklore + 12);
+  unlockBadge('storyteller', 'Storyteller');
+  saveCommunity();
+  renderCommunity();
+  renderHome();
+  toast('Story shared, +20 XP');
+  goto('community');
+}
+
+/* ---- Oral heritage recorder ---- */
+var recorder = { mediaRecorder:null, chunks:[], seconds:0, timer:null, active:false };
+function toggleRecording(){
+  if(recorder.active){ stopRecording(); }
+  else { startRecording(); }
+}
+function startRecording(){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    document.getElementById('recStatus').textContent = 'Microphone access is not available here. You can still write your story below.';
+    return;
+  }
+  navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
+    recorder.chunks = [];
+    recorder.mediaRecorder = new MediaRecorder(stream);
+    recorder.mediaRecorder.ondataavailable = function(e){ if(e.data.size > 0) recorder.chunks.push(e.data); };
+    recorder.mediaRecorder.onstop = function(){
+      var blob = new Blob(recorder.chunks, {type:'audio/webm'});
+      var url = URL.createObjectURL(blob);
+      document.getElementById('recPlayer').innerHTML = '<audio controls src="' + url + '"></audio><p class="rec-txt" style="margin-top:6px;">Saved for this session. Add a title above and share it as a story to publish it to the community.</p>';
+      stream.getTracks().forEach(function(t){ t.stop(); });
+    };
+    recorder.mediaRecorder.start();
+    recorder.active = true;
+    recorder.seconds = 0;
+    document.getElementById('recBtn').classList.add('recording');
+    document.getElementById('recBtn').textContent = '\u25a0';
+    document.getElementById('recStatus').textContent = 'Recording your story...';
+    recorder.timer = setInterval(function(){
+      recorder.seconds++;
+      var m = String(Math.floor(recorder.seconds / 60)).padStart(2,'0');
+      var s = String(recorder.seconds % 60).padStart(2,'0');
+      document.getElementById('recTimer').textContent = m + ':' + s;
+    }, 1000);
+  }).catch(function(){
+    document.getElementById('recStatus').textContent = 'Microphone permission was not granted. You can still write your story below.';
+  });
+}
+function stopRecording(){
+  if(recorder.mediaRecorder && recorder.active){
+    recorder.mediaRecorder.stop();
+  }
+  recorder.active = false;
+  clearInterval(recorder.timer);
+  document.getElementById('recBtn').classList.remove('recording');
+  document.getElementById('recBtn').textContent = '\ud83c\udfa4';
+  document.getElementById('recStatus').textContent = 'Recording saved below.';
+}
+
+/* ===================== LEADERBOARD ===================== */
+function renderLeaderboard(){
+  syncLeaderboardEntry();
+  var rows = Object.keys(leaderboard).map(function(name){
+    return {name: name, xp: leaderboard[name].xp, role: leaderboard[name].role};
+  }).sort(function(a,b){ return b.xp - a.xp; });
+  document.getElementById('lbCard').innerHTML = rows.map(function(row, i){
+    var isMe = row.name === state.name;
+    return '<div class="lb-row ' + (isMe ? 'me' : '') + '"><div class="lb-rank">' + (i+1) + '</div><div class="lb-avatar">' + (isMe ? '\ud83d\ude0a' : '\ud83d\ude42') + '</div><div><div class="lb-name">' + row.name + (isMe ? ' (you)' : '') + '</div><div class="lb-role">' + row.role + '</div></div><div class="lb-xp">' + row.xp + ' XP</div></div>';
+  }).join('');
+}
+
+/* ===================== ASK NANI ===================== */
+function askNani(msg){
+  msg = (msg || '').trim();
+  if(!msg) return;
+  chatLog.push({from:'me', text:msg});
+  document.getElementById('chatInput').value = '';
+  renderChat();
+  showTyping(true);
+  setTimeout(function(){
+    var lower = msg.toLowerCase();
+    var hit = null;
+    for(var i=0;i<NANI_RESPONSES.length;i++){
+      var r = NANI_RESPONSES[i];
+      for(var j=0;j<r.k.length;j++){
+        if(lower.indexOf(r.k[j]) > -1){ hit = r; break; }
+      }
+      if(hit) break;
+    }
+    var reply = hit ? hit.r : 'That is a wonderful question. I do not have that story memorised yet, but explore the Heritage Map or Scan and Learn, I learn alongside you, beta.';
+    showTyping(false);
+    chatLog.push({from:'nani', text:reply});
+    addXp(2);
+    renderChat();
+    saveChat();
+  }, 900);
+}
+function showTyping(on){
+  var scroll = document.getElementById('chatScroll');
+  var existing = document.getElementById('typingBubble');
+  if(on){
+    if(existing) return;
+    var el = document.createElement('div');
+    el.className = 'bubble nani';
+    el.id = 'typingBubble';
+    el.innerHTML = '<span class="typing-dots"><span></span><span></span><span></span></span>';
+    scroll.appendChild(el);
+    scroll.scrollTop = scroll.scrollHeight;
+  } else if(existing){
+    existing.remove();
+  }
+}
+function renderChat(){
+  var scroll = document.getElementById('chatScroll');
+  scroll.innerHTML = chatLog.map(function(m){
+    return '<div class="bubble ' + (m.from === 'nani' ? 'nani' : 'me') + '">' + m.text + '</div>';
+  }).join('');
+  scroll.scrollTop = scroll.scrollHeight;
+}
+
+/* ===================== SCAN & LEARN ===================== */
+function openScan(){
+  document.getElementById('scanBody').innerHTML =
+    '<div class="viewfinder">Point your camera at a heritage object.<br>For this demo, tap a sample below.</div><div class="scan-grid" id="scanOptions"></div>';
+  document.getElementById('scanOptions').innerHTML = Object.keys(SCAN_SAMPLES).map(function(key){
+    var s = SCAN_SAMPLES[key];
+    return '<button class="scan-opt" onclick="doScan(\'' + key + '\')"><div class="ic">' + s.ic + '</div><div class="slbl">' + s.name + '</div></button>';
+  }).join('');
+  document.getElementById('scanModal').classList.add('show');
+}
+function doScan(key){
+  var s = SCAN_SAMPLES[key];
+  document.getElementById('scanBody').innerHTML =
+    '<div class="card scan-result"><div class="ic">' + s.ic + '</div><h2 style="font-size:1.15rem; margin-top:8px;">' + s.name + '</h2>' +
+    '<div class="rd-tags"><span class="tag">Origin: ' + s.origin + '</span><span class="tag">Era: ' + s.era + '</span></div>' +
+    '<div class="fact">' + s.fact + '</div>' +
+    '<div style="margin-top:14px; display:flex; gap:8px;"><button class="btn small" onclick="openScan()">Scan another</button><button class="btn small ink" onclick="closeModal(\'scanModal\')">Done</button></div></div>';
+  if(state.scans.indexOf(key) === -1){
+    state.scans.push(key);
+    addXp(12);
+    state.dna.crafts = Math.min(100, state.dna.crafts + 7);
+    state.dna.language = Math.min(100, state.dna.language + 3);
+    unlockBadge('scanner', 'Scanner');
+    toast('Identified: ' + s.name + ' +12 XP');
+  }
+}
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+
+/* ===================== IN-APP CONFIRM / PROMPT ===================== */
+/* Native window.confirm()/prompt() are blocked in the sandboxed artifact
+   preview, so logout/reset/rename use this in-app modal instead. */
+var askCallback = null;
+var askIsPrompt = false;
+function askConfirm(message, onYes){
+  askIsPrompt = false;
+  askCallback = onYes;
+  document.getElementById('askTitle').textContent = 'Are you sure?';
+  document.getElementById('askMessage').textContent = message;
+  document.getElementById('askInputWrap').style.display = 'none';
+  document.getElementById('askConfirmBtn').textContent = 'Confirm';
+  document.getElementById('askModal').classList.add('show');
+}
+function askPrompt(title, message, defaultValue, onSubmit){
+  askIsPrompt = true;
+  askCallback = onSubmit;
+  document.getElementById('askTitle').textContent = title;
+  document.getElementById('askMessage').textContent = message;
+  document.getElementById('askInputWrap').style.display = 'block';
+  document.getElementById('askInput').value = defaultValue || '';
+  document.getElementById('askConfirmBtn').textContent = 'Save';
+  document.getElementById('askModal').classList.add('show');
+  setTimeout(function(){ document.getElementById('askInput').focus(); }, 150);
+}
+function closeAsk(confirmed){
+  document.getElementById('askModal').classList.remove('show');
+  var cb = askCallback;
+  askCallback = null;
+  if(!confirmed || !cb) return;
+  if(askIsPrompt){
+    var val = document.getElementById('askInput').value.trim();
+    if(val) cb(val);
+  } else {
+    cb();
+  }
+}
+
+/* ===================== STREAK ===================== */
+function openStreak(){
+  renderStreak();
+  document.getElementById('streakModal').classList.add('show');
+}
+function renderStreak(){
+  var days = ['M','T','W','T','F','S','S'];
+  var todayIdx = new Date().getDay();
+  todayIdx = todayIdx === 0 ? 6 : todayIdx - 1;
+  document.getElementById('streakStrip').innerHTML = days.map(function(d, i){
+    var done = state.streakDone[i];
+    return '<div class="sday"><div class="sflame ' + (done ? 'done' : '') + ' ' + (i === todayIdx ? 'today' : '') + '">' + (done ? '\ud83d\udd25' : '\u00b7') + '</div>' + d + '</div>';
+  }).join('');
+  document.getElementById('streakNum').textContent = state.streak;
+  document.getElementById('checkinBtn').disabled = state.checkedInToday;
+  document.getElementById('checkinBtn').textContent = state.checkedInToday ? 'Checked in today' : 'Check in today';
+}
+function checkIn(){
+  if(state.checkedInToday) return;
+  var todayIdx = new Date().getDay();
+  todayIdx = todayIdx === 0 ? 6 : todayIdx - 1;
+  state.checkedInToday = true;
+  state.streakDone[todayIdx] = true;
+  state.streak++;
+  addXp(10);
+  if(state.streak % 7 === 0) unlockBadge('streak7', '7-Day Flame');
+  renderStreak();
+  saveProfile();
+  toast('Streak extended to ' + state.streak + ' days, +10 XP');
+}
+
+/* ===================== RENDER ALL ===================== */
+function renderAll(){
+  renderHome();
+  renderMap();
+  renderGames();
+  renderPassport();
+  renderCommunity();
+  renderChat();
+  if(state.role){ goto('home'); }
+}
+renderAll();
+loadFromStorage();
+</script>
+</body>
+</html>
